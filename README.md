@@ -23,9 +23,10 @@ It serves as a certalized store for state that needs to be used across your enti
 
 ```mermaid
 stateDiagram
-    Actions-->State
-    State-->View
-    View-->Action
+
+    Actions --> (state)
+    (state) --> View
+    View --> Actions
 ```
 
 #### Terminology
