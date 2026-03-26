@@ -1,0 +1,16 @@
+{
+  "name": "redux-react-essentials",
+  "version": "1.0.0",
+  "description": "redux, react ",
+  "keywords": [
+    "redux",
+    "react",
+    "react-toolkit"
+  ],
+  "license": "ISC",
+  "author": "dineshkumarkannan",
+  "scripts": {
+    "install-dependencies": "cd counter-app && npm install",
+    "start:counter-app": "cd counter-app && npm run dev"
+  }
+}
