@@ -22,10 +22,10 @@ It serves as a certalized store for state that needs to be used across your enti
 - The **actions**, the events that occur in the app based on used input, and trigger updates in the state
 
 ```mermaid
-graph TD;
-    Actions-->State;
-    State-->View;
-    View-->Action;
+stateDiagram
+    Actions-->State
+    State-->View
+    View-->Action
 ```
 
 #### Terminology
