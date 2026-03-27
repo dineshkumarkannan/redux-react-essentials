@@ -1,13 +1,28 @@
-import { useAppSelector } from "../../app/hook";
+import { useEffect } from "react";
+import { useAppDispatch, useAppSelector } from "../../app/hook";
 import PostExcerpt from "./PostExcerpt";
-import { selectAllPosts } from "./postsSlice";
+import {
+  fetchPosts,
+  selectAllPosts,
+  selectPostsError,
+  selectPostsStatus,
+} from "./postsSlice";
 
 const PostsList = () => {
+  const dispatch = useAppDispatch();
   const posts = useAppSelector(selectAllPosts);
+  const postsStatus = useAppSelector(selectPostsStatus);
+  const postsError = useAppSelector(selectPostsError);
 
   const orderedPosts = posts
     .slice()
     .sort((a, b) => b.date.localeCompare(a.date));
+
+  useEffect(() => {
+    if (postsStatus === "idle") {
+      dispatch(fetchPosts());
+    }
+  }, [postsStatus, dispatch]);
 
   const renderPosts = orderedPosts.map((post) => (
     <PostExcerpt
@@ -20,10 +35,17 @@ const PostsList = () => {
     />
   ));
 
+  let content = renderPosts;
+  if (postsStatus === "pending") {
+    content = <p>Loading...</p>;
+  } else if (postsStatus === "failed") {
+    content = <p>{postsError}</p>;
+  }
+
   return (
     <div>
       <h2>Posts List</h2>
-      {renderPosts}
+      {content}
     </div>
   );
 };

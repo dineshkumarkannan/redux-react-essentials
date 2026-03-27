@@ -1,16 +1,29 @@
 import { useForm } from "react-hook-form";
 import { useAppDispatch, useAppSelector } from "../../app/hook";
-import { postAdded, type Post } from "./postsSlice";
-import { selectAllUsers } from "../users/usersSlice";
 import { selectCurrentUser } from "../auth/authSlice";
+import { addNewPost } from "./postsSlice";
+import { useState } from "react";
 
 const AddPost = () => {
+  const [addRequestStatus, setAddRequestStatus] = useState<"idle" | "pending">(
+    "idle",
+  );
   const dipatch = useAppDispatch();
   const userId = useAppSelector(selectCurrentUser);
   const { register, handleSubmit, reset } = useForm();
 
-  const onSumbit = (data: Post) => {
-    dipatch(postAdded(data.title, data.content, userId));
+  const onSumbit = async (data: Post) => {
+    try {
+      setAddRequestStatus("pending");
+      await dipatch(
+        addNewPost({ title: data.title, content: data.content, userId }),
+      ).unwrap();
+    } catch (err) {
+      console.error("Failed to save the post:", err);
+    } finally {
+      setAddRequestStatus("idle");
+    }
+
     reset();
   };
 
