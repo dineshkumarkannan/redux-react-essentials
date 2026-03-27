@@ -38,7 +38,7 @@ stateDiagram
 - **Dispatch** : The only way to update the state is to call `dispatch()` and pass in an action object.
 - **selectors** : Functions that know how to extract specific pieces of information from a store state value.
 
-#### Simple Example : 1. Counter App
+### Simple Example : 1. Counter App
 
 ##### 1. Creating the Redux Store
 
@@ -119,4 +119,68 @@ const Counter = () => {
 };
 ```
 
-#### Simple Example : 2. Post App
+---
+
+---
+
+#### `extraReducers` to Handle Other Actions
+
+Which can be used to have the slice listen for actions that were defined elsewhere in the app. Any time those other actions are dispatched, this slice. can update its own state as well.
+
+```ts
+const postsSlice = createSlice({
+  name: "posts",
+  initialState,
+  reducers: {
+    postAdded: {
+      reducer(state, action) {
+        state.push(action.payload);
+      },
+      prepare(title: string, content: string, userId: string) {
+        console.log("prepate", title, content);
+        return {
+          payload: {
+            id: nanoid(),
+            title,
+            content,
+            date: new Date().toISOString(),
+            user: userId,
+            reactions: {
+              likes: 0,
+              dislikes: 0,
+            },
+          },
+        };
+      },
+    },
+    postUpdated: (state, action) => {
+      const { id, title, content } = action.payload;
+      const existingPost = state.find((post) => post.id === id);
+      if (existingPost) {
+        existingPost.title = title;
+        existingPost.content = content;
+      }
+    },
+    postDeleted: (state, action) => {},
+    reactionsAdded: (state, action) => {
+      const { postId, reaction } = action.payload as {
+        postId: string;
+        reaction: keyof Reactions;
+      };
+      const existingPost = state.find((post) => post.id === postId);
+      if (existingPost) {
+        existingPost.reactions[reaction]++;
+      }
+    },
+  },
+  extraReducers: (builder) => {
+    builder.addCase(userLoggedOut, (state) => {
+      return [];
+    });
+  },
+});
+```
+
+**Use `extraReducers` to handle actions that were defined outside of the slice.**
+
+### Simple Example : 2. Post App

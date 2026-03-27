@@ -1,6 +1,7 @@
 import { createSlice, nanoid } from "@reduxjs/toolkit";
 import type { RootState } from "../../app/store";
 import { sub } from "date-fns";
+import { userLoggedOut } from "../auth/authSlice";
 
 export interface Reactions {
   likes: number;
@@ -87,6 +88,11 @@ const postsSlice = createSlice({
         existingPost.reactions[reaction]++;
       }
     },
+  },
+  extraReducers: (builder) => {
+    builder.addCase(userLoggedOut, (state) => {
+      return [];
+    });
   },
 });
 
