@@ -38,7 +38,7 @@ stateDiagram
 - **Dispatch** : The only way to update the state is to call `dispatch()` and pass in an action object.
 - **selectors** : Functions that know how to extract specific pieces of information from a store state value.
 
-#### Counter App
+#### Simple Example : 1. Counter App
 
 ##### 1. Creating the Redux Store
 
@@ -61,6 +61,8 @@ export type AppDispatch = AppStore["dispatch"];
 
 ##### 2.Creating Slice Reducers and Actions
 
+**A "slice" is a collection of Redux reducer logic and actions for a single feature in app**
+
 `features/counter/counterSlice.ts`
 
 ```js
@@ -80,13 +82,13 @@ const counterSlice = createSlice({
     initialState,
     reducers: {
         increment: (state) => {
-        state.value += 1;
+            state.value += 1;
         },
         decrement: (state) => {
-        state.value -= 1;
+            state.value -= 1;
         },
         incrementByValue: (state, action: PayloadAction<number>) => {
-        state.value += action.payload;
+            state.value += action.payload;
         },
     },
 });
@@ -116,3 +118,5 @@ const Counter = () => {
   );
 };
 ```
+
+#### Simple Example : 2. Post App
