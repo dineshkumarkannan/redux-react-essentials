@@ -16,6 +16,7 @@ const PostsList = () => {
       title={post.title}
       content={post.content}
       date={post.date}
+      reactions={post.reactions}
     />
   ));
 
