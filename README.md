@@ -341,3 +341,194 @@ export const selectPostsError = (state: RootState) => state.posts.error;
 
 export default postsSlice.reducer;
 ```
+
+### Improving Rendering Performance
+
+- **Memoizing selector function** - `createSelector` function that generates memoized selectors that will only recalculate results when the input change.
+
+```ts
+import {
+  createSlice,
+  createAsyncThunk,
+  createSelector,
+} from "@reduxjs/toolkit";
+
+export const selectAllPosts = (state: RootState) => state.posts.posts;
+
+export const selectPostById = (state: RootState, postId: string) =>
+  state.posts.posts.find((post) => post.id === postId);
+
+export const selectPostsByUser = createSelector(
+  [selectAllPosts, (state: RootState, userId: string) => userId],
+  (posts, userId) => posts.filter((post) => post.user === userId),
+);
+```
+
+Note: **all selectors in an application need to be memoized!**
+
+#### Normalizing Data
+
+**"Normalized state"** means,
+
+- We only have one copy of each particular piece of data in our state, so theres no duplication
+- Data that has been normalized is kept in a lookup table, where the item IDs are the keys, and the items themselves are the values. This is typically just a plain JS object.
+- There may also be an array of all of the IDs for a particular item type.
+
+```js
+{
+  users: {
+    ids: ["user1", "user2", "user3"],
+    entities: {
+      "user1": {id: "user1", firstName, lastName},
+      "user2": {id: "user2", firstName, lastName},
+      "user3": {id: "user3", firstName, lastName},
+    }
+  }
+}
+```
+
+```js
+const userId = "user2";
+const userObject = state.users.entities[userId];
+```
+
+##### Managing Normalized State with `createEntityAdapter`
+
+`createEntityAdapter` API provides a standardized way to store your data, which putting them into the shape of `{ ids: [], entities: {} }`
+
+```ts
+import { createSlice, createEntityAdapter } from "@reduxjs/toolkit";
+import { client } from "../api/client";
+import { createAppAsyncThunk } from "../app/withTypes";
+
+const usersAdapter = createEntityAdapter<User>();
+
+const initialState = usersAdapter.getInitialState();
+
+export const fetchUsers = createAppAsyncThunk("users/fetchUsers", async () => {
+  const response = await client.get("/fakeApi/users");
+  return response.users;
+});
+
+const usersSlice = createSlice({
+  name: "users",
+  initialState,
+  reducers: {},
+  extraReducers(builder) {
+    builder.addCase(fetchUsers.fulfilled, usersAdapter.setAll);
+  },
+});
+
+export default usersSlice.reducer;
+
+export const { selectAll: selectAllUsers, selectById: selectUserById } =
+  usersAdapter.getSelectors((state: RootState) => state.users);
+
+export const selectCurrentUser = (state: RootState) => {
+  const currentUsername = selectCurrentUsername(state);
+  if (!currentUsername) {
+    return;
+  }
+  return selectUserById(state, currentUsername);
+};
+```
+
+#### Writing Reactive Logic
+
+Sometimes we need to write more logic that runs in response to things that happened in the app, such as certain actions being dispatched.
+
+##### Reactive Logic with `createListenerMiddleware`
+
+**Redux Toolkit includes the `createListenerMiddleware` API to let us write logic that runs in response to specific actions being dispatched.**
+
+`app/listenerMiddleware.ts`
+
+```ts
+import { createListenerMiddleware, addListener } from "@reduxjs/toolkit";
+import type { RootState, AppDispatch } from "./store";
+
+export const listenerMiddleware = createListenerMiddleware();
+
+export const startAppListening = listenerMiddleware.startListening.withTypes<
+  RootState,
+  AppDispatch
+>();
+export type AppStartListening = typeof startAppListening;
+
+export const addAppListener = addListener.withTypes<RootState, AppDispatch>();
+export type AppAddListener = typeof addAppListener;
+```
+
+`app/store.ts`
+
+```ts
+import { configureStore } from '@reduxjs/toolkit'
+
+import authReducer from '@/features/auth/authSlice'
+import postsReducer from '@/features/posts/postsSlice'
+import usersReducer from '@/features/users/usersSlice'
+import notificationsReducer from '@/features/notifications/notificationsSlice'
+
+import { listenerMiddleware } from './listenerMiddleware'
+
+export const store = configureStore({
+  reducer: {
+    auth: authReducer,
+    posts: postsReducer,
+    users: usersReducer,
+    notifications: notificationsReducer
+  },
+  middleware: getDefaultMiddleware =>
+    getDefaultMiddleware().prepend(listenerMiddleware.middleware)
+
+```
+
+`features/posts/postsSlice.ts`
+
+```ts
+import {
+  createEntityAdapter,
+  createSelector,
+  createSlice,
+  EntityState,
+  PayloadAction,
+} from "@reduxjs/toolkit";
+import { client } from "@/api/client";
+
+import type { RootState } from "@/app/store";
+import { AppStartListening } from "@/app/listenerMiddleware";
+import { createAppAsyncThunk } from "@/app/withTypes";
+
+// omit types, initial state, slice definition, and selectors
+
+export const selectPostsStatus = (state: RootState) => state.posts.status;
+export const selectPostsError = (state: RootState) => state.posts.error;
+
+export const addPostsListeners = (startAppListening: AppStartListening) => {
+  startAppListening({
+    actionCreator: addNewPost.fulfilled,
+    effect: async (action, listenerApi) => {
+      const { toast } = await import("react-tiny-toast");
+
+      const toastId = toast.show("New post added!", {
+        variant: "success",
+        position: "bottom-right",
+        pause: true,
+      });
+
+      await listenerApi.delay(5000);
+      toast.remove(toastId);
+    },
+  });
+};
+```
+
+`app/listenerMiddleware.ts`
+
+```ts
+// ...
+
+// Call this and pass in `startAppListening` to let the
+// posts slice set up its listeners
+addPostsListeners(startAppListening);
+```
