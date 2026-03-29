@@ -3,7 +3,8 @@ import { store } from "../store";
 import { selectCurrentToken } from "../../features/auth/authSlice";
 
 // Helper to also check isAuthenticated
-function selectIsAuthenticated(state) {
+import type { RootState } from "../hooks";
+function selectIsAuthenticated(state: RootState) {
   return state.auth.isAuthenticated;
 }
 

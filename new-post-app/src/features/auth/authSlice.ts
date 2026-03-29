@@ -28,7 +28,7 @@ export function rehydrateAuthState(): Partial<AuthState> {
   }
 }
 
-type AuthState = {
+export type AuthState = {
   accessToken: string | null;
   user: Record<string, unknown> | null;
   isAuthenticated: boolean;
